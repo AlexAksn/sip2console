@@ -35,5 +35,7 @@
         public static readonly string SipDatetime = "yyyyMMdd    HHmmss";
 
         public static readonly string Summary = "          "; //10-char, fixed-length required field
+
+        public static readonly string SipStatusRegex = $@"{FidInstId}(?<id>[^\|]*)\|";
     }
 }

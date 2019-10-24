@@ -30,7 +30,7 @@ namespace Sip2Console
 
         public void Open()
         {
-            _sipClient = new TcpClient { ReceiveTimeout = 60 * 1000, NoDelay = true };
+            _sipClient = new TcpClient { ReceiveTimeout = 10 * 1000, NoDelay = true };
             if (!_sipClient.ConnectAsync(_hostname, _port).Wait(TimeSpan.FromSeconds(60)))
                 throw new TimeoutException();
             _ns = _sipClient.GetStream();
@@ -46,7 +46,7 @@ namespace Sip2Console
                 // read response
                 var response = new byte[512];
                 var responseData = new StringBuilder();
-                var duration = TimeSpan.FromSeconds(60);
+                var duration = TimeSpan.FromSeconds(5);
                 var sw = Stopwatch.StartNew();
                 do
                 {
