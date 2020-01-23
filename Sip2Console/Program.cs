@@ -10,22 +10,29 @@ namespace Sip2Console
     {
         static void Main(string[] args)
         {
-            using (var sip = new Sip2Connection("127.0.0.1", 2222)) //stunnel server IP and port
+            LogMessage("Input SIP2 server IP and press Enter:");
+            var sip2Server = Console.ReadLine();
+
+            LogMessage("Input SIP2 server Port and press Enter:");
+            var sip2Port = Convert.ToInt32(Console.ReadLine());
+
+            using (var sip = new Sip2Connection(sip2Server, sip2Port)) //SIP2 server IP and port
             {
                 sip.Open();
                 LogMessage("Connected ...");
+                
+                LogMessage("Input barcode and press Enter:");
+                var barcode = Console.ReadLine();
+                
+                LogMessage("Input pin and press Enter:");
+                var pin = Console.ReadLine();
 
-                // In order to get InstitutionId we send ScStatus message to ASC
-                var statusMessage = GetStatusMessage(0);
-                LogMessage(statusMessage);
+                LogMessage("Input SIP2 Server Password:");
+                var serverLoginPwd = Console.ReadLine();
 
-                var statusMessageResponse = sip.SendMessage(statusMessage);
-                LogMessage(statusMessageResponse);
-
-                var institutionId = GetInstitutionIdFromStatusResponse(statusMessageResponse);
-
-                var patron = GetPatronMessage(seqNum: 1, institutionId: institutionId, barcode: "00665609", pin: "1558");
+                var patron = GetPatronMessage(seqNum: 0, institutionId: "", barcode, pin, serverLoginPwd); // 63 message with Barcode and PIN
                 LogMessage(patron);
+                
                 var response = sip.SendMessage(patron);
                 LogMessage(response);
             }
@@ -33,31 +40,10 @@ namespace Sip2Console
             Console.ReadLine();
         }
 
-        // This message will be the first message sent by SC to the ASC once a connection has been established
-        // 99<status code><max print width><protocol version>
-        private static string GetStatusMessage(int seqNum)
-        {
-            var statusMessage = $"{Sip2Command.ScStatus}0000{Sip2Command.Version}{Sip2Command.FidSeq}{seqNum}{Sip2Command.FidCksum}";
-            return AddCheckSum(statusMessage);
-        }
 
-        private static string GetInstitutionIdFromStatusResponse(string response)
-        {
-            if (!response.StartsWith(Sip2Command.AcsStatus, StringComparison.InvariantCultureIgnoreCase))
-                throw new Exception($"ACS status response did not match expected result. Response - {response}");
-
-            var re = new Regex(Sip2Command.SipStatusRegex);
-            var match = re.Match(response);
-            if (!match.Success) { throw new Exception($"ACS status response did not match expected result. Response - {response}"); }
-
-            var institutionId = match.Groups["id"].Value;
-            return institutionId;
-        }
-
-        private static string GetPatronMessage(int seqNum, string institutionId, string barcode, string pin)
+        private static string GetPatronMessage(int seqNum, string institutionId, string barcode, string pin, string serverLoginPwd)
         {
             var dateFld = DateTime.Now.ToString(Sip2Command.SipDatetime);
-            var serverLoginPwd = "";
 
             var patronMessage = $"{Sip2Command.PatronInfo}001{dateFld}{Sip2Command.Summary}{Sip2Command.FidInstId}{institutionId}|{Sip2Command.FidPatronId}{barcode}|{Sip2Command.FidTerminalPwd}{serverLoginPwd}|{Sip2Command.FidPatronPwd}{pin}|{Sip2Command.FidSeq}{seqNum}{Sip2Command.FidCksum}";
             return AddCheckSum(patronMessage);
